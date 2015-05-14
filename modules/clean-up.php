@@ -6,6 +6,7 @@ namespace Roots\Soil\CleanUp;
  * Clean up wp_head()
  *
  * Remove unnecessary <link>'s
+ * Remove inline CSS and JS from WP emoji support
  * Remove inline CSS used by Recent Comments widget
  * Remove inline CSS used by posts with galleries
  * Remove self-closing tag and change ''s to "'s on rel_canonical()
@@ -26,6 +27,14 @@ function head_cleanup() {
   remove_action('wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0);
   remove_action('wp_head', 'wp_generator');
   remove_action('wp_head', 'wp_shortlink_wp_head', 10, 0);
+  remove_action('wp_head', 'print_emoji_detection_script', 7);
+  remove_action('admin_print_scripts', 'print_emoji_detection_script');
+  remove_action('wp_print_styles', 'print_emoji_styles');
+  remove_action('admin_print_styles', 'print_emoji_styles');
+  remove_filter('the_content_feed', 'wp_staticize_emoji');
+  remove_filter('comment_text_rss', 'wp_staticize_emoji');
+  remove_filter('wp_mail', 'wp_staticize_emoji_for_email');
+  add_filter('use_default_gallery_style', '__return_false');
 
   global $wp_widget_factory;
 
@@ -109,12 +118,11 @@ add_filter('script_loader_tag', __NAMESPACE__ . '\\clean_script_tag');
  * Add and remove body_class() classes
  */
 function body_class($classes) {
-  // Add post/page slug if not present and template slug
+  // Add post/page slug if not present
   if (is_single() || is_page() && !is_front_page()) {
     if (!in_array(basename(get_permalink()), $classes)) {
       $classes[] = basename(get_permalink());
     }
-    $classes[] = str_replace('.php', '', basename(get_page_template()));
   }
 
   // Remove unnecessary classes
